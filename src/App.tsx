@@ -3,6 +3,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, TrendingUp, TrendingDown, PiggyBank, Calendar, ChevronLeft, ChevronRight, Check, X, ChevronDown, LayoutDashboard, Settings, Trash2, Edit2 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from './firebase';
 
 // Месяцы
 const monthNames = [
@@ -849,6 +851,84 @@ export default function App() {
           </div>
         )}
 
+      </div>
+    </div>
+  );
+}
+
+
+export default function ProtectedApp() {
+  const [user, setUser] = useState(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [checking, setChecking] = useState(true);
+
+  // Проверяем, авторизован ли пользователь
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setChecking(false);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (err) {
+      setError('Неверный email или пароль. Попробуйте снова.');
+    }
+  };
+
+  const handleLogout = () => signOut(auth);
+
+  if (checking) return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-sans text-gray-500">Загрузка защищенного соединения...</div>;
+
+  // Если токен есть - пускаем внутрь
+  if (user) {
+    return (
+      <div>
+        <div className="bg-gray-900 text-white px-6 py-2 flex justify-between items-center text-xs font-sans">
+          <span className="opacity-70">Защищенная сессия: {user.email}</span>
+          <button onClick={handleLogout} className="hover:text-rose-400 transition-colors">Выйти из системы</button>
+        </div>
+        <App />
+      </div>
+    );
+  }
+
+  // Если токена нет - показываем окно входа
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-sm w-full">
+        <div className="text-center mb-6">
+          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Бюджет РЭС КТ</h2>
+          <p className="text-sm text-gray-500 mt-1">Авторизуйтесь для доступа к данным</p>
+        </div>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <input
+              type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 outline-none transition-colors" required
+            />
+          </div>
+          <div>
+            <input
+              type="password" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 outline-none transition-colors" required
+            />
+            {error && <p className="text-xs text-rose-500 mt-1.5 text-center">{error}</p>}
+          </div>
+          <button type="submit" className="w-full py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm">
+            Войти
+          </button>
+        </form>
       </div>
     </div>
   );
