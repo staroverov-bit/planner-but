@@ -2,13 +2,12 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyARoAqRuX2dZSCeBSXba4OaRtT0JPMNV7M",
-  authDomain: "plannerres.firebaseapp.com",
-  databaseURL: "https://plannerres-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "plannerres",
-  storageBucket: "plannerres.firebasestorage.app",
-  messagingSenderId: "490155416536",
-  appId: "1:490155416536:web:bb7f2625bc51af0c7e30ad"
+  apiKey: "AIzaSyAUH4_VSPwZ_hscy6r6BvCubgHYRnF7A7g",
+  authDomain: "planner-res.firebaseapp.com",
+  projectId: "planner-res",
+  storageBucket: "planner-res.firebasestorage.app",
+  messagingSenderId: "973122809890",
+  appId: "1:973122809890:web:2accd811066e7bff851a7b"
 };
 
 // Инициализируем подключение
