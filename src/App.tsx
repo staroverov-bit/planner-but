@@ -102,7 +102,7 @@ const getValueForPeriod = (yearlyData, year, period, monthIdx, quarterIdx) => {
   return arr.reduce((sum, val) => sum + (val || 0), 0);
 };
 
-export default function App() {
+function App() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
