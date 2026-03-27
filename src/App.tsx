@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, TrendingUp, TrendingDown, PiggyBank, Calendar, ChevronLeft, ChevronRight, Check, X, ChevronDown, LayoutDashboard, Settings, Trash2, Edit2, History, Save, RotateCcw } from 'lucide-react';
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc, onSnapshot, writeBatch, deleteDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
 // Месяцы
@@ -13,7 +13,7 @@ const monthNames = [
 const shortMonthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
 const quarterNames = ['1 Квартал', '2 Квартал', '3 Квартал', '4 Квартал'];
 
-// Стартовые данные (используются только если база пустая)
+// Стартовые данные
 const rawBudgetItems = [
   { id: 101, type: 'income', group: 'Основные поступления', name: 'Остаток с предыдущего периода', planYear: 1000000, fact: [1000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
   { id: 102, type: 'income', group: 'Основные поступления', name: 'Продажи с сайта', planYear: 5000000, fact: [250000, 300000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
@@ -86,41 +86,69 @@ function App() {
   const [confirmRestoreId, setConfirmRestoreId] = useState(null);
   const [confirmDeleteBackupId, setConfirmDeleteBackupId] = useState(null);
 
-  // --- ЗАГРУЗКА ИЗ FIREBASE ---
+  // --- ВОССТАНОВЛЕННАЯ ЗАГРУЗКА ИЗ FIREBASE ---
   useEffect(() => {
-    const loadDB = async () => {
-      try {
-        // Укажите здесь вашу старую коллекцию и документ, если они назывались иначе
-        const docRef = doc(db, 'budgetData', 'main'); 
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-          const data = snap.data();
-          setItems(data.items || initialBudgetItems);
-          setBackups(data.backups || []);
-        } else {
-          setItems(initialBudgetItems);
-        }
-      } catch (error) {
-        console.error("Ошибка загрузки базы данных:", error);
-        setItems(initialBudgetItems);
-      } finally {
+    // 1. Подключаем вашу старую коллекцию budgetItems
+    const unsub = onSnapshot(collection(db, 'budgetItems'), (snapshot) => {
+      if (snapshot.empty) {
+        const batch = writeBatch(db);
+        initialBudgetItems.forEach(item => {
+          const docRef = doc(db, 'budgetItems', item.id.toString());
+          batch.set(docRef, item);
+        });
+        batch.commit();
+      } else {
+        const dbItems = snapshot.docs.map(d => d.data());
+        dbItems.sort((a, b) => a.id - b.id);
+        setItems(dbItems);
         setIsDbLoaded(true);
       }
-    };
-    loadDB();
+    });
+
+    // 2. Отдельно подтягиваем бекапы
+    getDoc(doc(db, 'system', 'backups')).then(snap => {
+      if (snap.exists()) {
+        setBackups(snap.data().list || []);
+      }
+    });
+
+    return () => unsub();
   }, []);
 
-  // --- ЕДИНАЯ ФУНКЦИЯ СОХРАНЕНИЯ ---
+  // --- ЕДИНАЯ ФУНКЦИЯ СОХРАНЕНИЯ (СОВМЕСТИМАЯ СО СТАРЫМ ФОРМАТОМ) ---
   const updateData = async (newItems, newBackups = backups) => {
     setItems(newItems);
     setBackups(newBackups);
+    
     try {
-      await setDoc(doc(db, 'budgetData', 'main'), {
-        items: newItems,
-        backups: newBackups
+      const batch = writeBatch(db);
+      
+      // Перезаписываем каждую измененную статью в ее отдельный документ
+      newItems.forEach(item => {
+        const docRef = doc(db, 'budgetItems', item.id.toString());
+        batch.set(docRef, item);
       });
+      
+      // Сохраняем бекапы отдельно
+      const backupsRef = doc(db, 'system', 'backups');
+      batch.set(backupsRef, { list: newBackups });
+      
+      await batch.commit();
     } catch (error) {
       console.error("Ошибка сохранения в базу:", error);
+    }
+  };
+
+  // Удаление статьи полностью
+  const executeDelete = async (id) => {
+    const newItems = items.filter(item => item.id !== id);
+    setItems(newItems);
+    setConfirmDeleteId(null);
+    try {
+      // Принудительно удаляем файл из базы
+      await deleteDoc(doc(db, 'budgetItems', id.toString()));
+    } catch (error) {
+      console.error("Ошибка удаления:", error);
     }
   };
 
@@ -326,10 +354,6 @@ function App() {
     updateData(newItems);
   };
 
-  const executeDelete = (id) => {
-    updateData(items.filter(item => item.id !== id));
-    setConfirmDeleteId(null);
-  };
 
   // УПРАВЛЕНИЕ БЕКАПАМИ
   const createBackup = (e) => {
