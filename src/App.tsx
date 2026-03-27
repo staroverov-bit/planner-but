@@ -887,15 +887,17 @@ export default function ProtectedApp() {
 
   if (checking) return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-sans text-gray-500">Загрузка защищенного соединения...</div>;
 
-  // Если токен есть - пускаем внутрь
+// Если токен есть - пускаем внутрь
   if (user) {
     return (
-      <div>
+      <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-12">
         <div className="bg-gray-900 text-white px-6 py-2 flex justify-between items-center text-xs font-sans">
           <span className="opacity-70">Защищенная сессия: {user.email}</span>
           <button onClick={handleLogout} className="hover:text-rose-400 transition-colors">Выйти из системы</button>
         </div>
-        <App />
+        <div className="p-4 md:p-8">
+          <App />
+        </div>
       </div>
     );
   }
