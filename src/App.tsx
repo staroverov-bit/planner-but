@@ -15,38 +15,12 @@ const quarterNames = ['1 Квартал', '2 Квартал', '3 Квартал'
 
 // Сырые стартовые данные
 const rawBudgetItems = [
-  // --- ПОСТУПЛЕНИЯ ---
   { id: 101, type: 'income', group: 'Основные поступления', name: 'Остаток с предыдущего периода', planYear: 1000000, fact: [1000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
   { id: 102, type: 'income', group: 'Основные поступления', name: 'Продажи с сайта', planYear: 5000000, fact: [250000, 300000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
   { id: 103, type: 'income', group: 'Маркетинговые услуги', name: 'РЭС Инжиниринг', planYear: 2000000, fact: [150000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 104, type: 'income', group: 'Маркетинговые услуги', name: 'Атомные тигры', planYear: 1500000, fact: [100000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 105, type: 'income', group: 'Маркетинговые услуги', name: 'РЭС Спэйс', planYear: 1000000, fact: [80000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 106, type: 'income', group: 'Маркетинговые услуги', name: 'РЭС Проджект', planYear: 500000, fact: [40000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 107, type: 'income', group: 'Основные поступления', name: 'Прочие поступления', planYear: 200000, fact: [10000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-
-  // --- РАСХОДЫ (Выплаты) ---
   { id: 1, type: 'expense', group: 'ФОТ + налоги на ФОТ', name: 'Заработная плата', planYear: 12000000, fact: [1000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 2, type: 'expense', group: 'ФОТ + налоги на ФОТ', name: 'Налоги на ФОТ', planYear: 3600000, fact: [300000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 3, type: 'expense', group: 'ФОТ + налоги на ФОТ', name: 'Премии сотрудникам', planYear: 500000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 4, type: 'expense', group: 'ФОТ + налоги на ФОТ', name: 'Аутсорс бухгалтерия', planYear: 240000, fact: [20000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 5, type: 'expense', group: 'Общие', name: 'Приобретение ОС', planYear: 100000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
   { id: 6, type: 'expense', group: 'Общие', name: 'Закупка материалов', planYear: 3750000, fact: [300000, 150000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 7, type: 'expense', group: 'Общие', name: 'ПО', planYear: 150000, fact: [10000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 8, type: 'expense', group: 'Общие', name: 'Сайт', planYear: 600000, fact: [50000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 9, type: 'expense', group: 'Общие', name: 'Съемки', planYear: 400000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
   { id: 10, type: 'expense', group: 'Общие', name: 'Реклама', planYear: 1800000, fact: [100000, 50000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 11, type: 'expense', group: 'Командировочные', name: 'Суточные', planYear: 150000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 12, type: 'expense', group: 'Командировочные', name: 'Билеты', planYear: 300000, fact: [45000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 13, type: 'expense', group: 'Командировочные', name: 'Проживание', planYear: 250000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 14, type: 'expense', group: 'Командировочные', name: 'Прочие в командировках', planYear: 50000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 15, type: 'expense', group: 'Персонал', name: 'Обучение персонала', planYear: 100000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 16, type: 'expense', group: 'Персонал', name: 'ДМС', planYear: 232428, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 17, type: 'expense', group: 'Административные', name: 'Аренда офис', planYear: 408000, fact: [34000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 18, type: 'expense', group: 'Административные', name: 'Лицензии, сертификаты, подписки', planYear: 50000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 19, type: 'expense', group: 'Административные', name: 'Доставка и курьерские услуги', planYear: 60000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 20, type: 'expense', group: 'Административные', name: 'РКО и касса', planYear: 25000, fact: [2000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 21, type: 'expense', group: 'Административные', name: 'УСН', planYear: 1000000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  { id: 22, type: 'expense', group: 'Административные', name: 'Прочее', planYear: 100000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
 ];
 
 const initialBudgetItems = rawBudgetItems.map(item => {
@@ -91,10 +65,12 @@ const getValueForPeriod = (yearlyData, year, period, monthIdx, quarterIdx) => {
 };
 
 // --- ОСНОВНОЕ ПРИЛОЖЕНИЕ ---
-function App() {
+function App({ isSystemGuest }) {
   const [items, setItems] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [isGuestMode, setIsGuestMode] = useState(false);
+  
+  // Если зашел гость по ссылке, намертво блокируем его в гостевом режиме
+  const [isGuestMode, setIsGuestMode] = useState(isSystemGuest || false);
   const [isDbLoaded, setIsDbLoaded] = useState(false);
   
   const [selectedYear, setSelectedYear] = useState(2026);
@@ -126,12 +102,14 @@ function App() {
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'budgetItems'), (snapshot) => {
       if (snapshot.empty) {
-        const batch = writeBatch(db);
-        initialBudgetItems.forEach(item => {
-          const docRef = doc(db, 'budgetItems', item.id.toString());
-          batch.set(docRef, item);
-        });
-        batch.commit();
+        if (!isSystemGuest) {
+          const batch = writeBatch(db);
+          initialBudgetItems.forEach(item => {
+            const docRef = doc(db, 'budgetItems', item.id.toString());
+            batch.set(docRef, item);
+          });
+          batch.commit();
+        }
       } else {
         const dbItems = snapshot.docs.map(d => d.data());
         dbItems.sort((a, b) => a.id - b.id);
@@ -150,10 +128,12 @@ function App() {
     });
 
     return () => unsub();
-  }, []);
+  }, [isSystemGuest]);
 
   // --- ЕДИНАЯ ФУНКЦИЯ СОХРАНЕНИЯ ---
   const updateData = async (newItems, newBackups = backups, newSensGroups = sensitiveGroups, newSensItems = sensitiveItems) => {
+    if (isSystemGuest) return; // Защита: гость физически не может ничего сохранить
+    
     setItems(newItems);
     setBackups(newBackups);
     setSensitiveGroups(newSensGroups);
@@ -179,8 +159,9 @@ function App() {
     }
   };
 
-  // Переключение гостевого режима
+  // Переключение гостевого режима (Доступно только Админу)
   const toggleGuestMode = () => {
+    if (isSystemGuest) return;
     const nextMode = !isGuestMode;
     setIsGuestMode(nextMode);
     if (nextMode) setActiveTab('dashboard');
@@ -453,7 +434,7 @@ function App() {
   }, [items]);
 
   if (!isDbLoaded) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-sans text-gray-500 text-sm">Подключение к базе данных...</div>;
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-sans text-gray-500 text-sm">Загрузка данных...</div>;
   }
 
   let subPeriodLabel = '';
@@ -687,7 +668,6 @@ function App() {
       
       <div className="max-w-[1400px] mx-auto space-y-6 print:max-w-none print:space-y-4">
         
-        {/* СПЕЦИАЛЬНЫЙ ЗАГОЛОВОК ДЛЯ ПЕЧАТИ */}
         <div className="hidden print:block mb-4">
           <h1 className="text-2xl font-bold text-black uppercase tracking-wide border-b-2 border-black pb-2">Отчет о движении денежных средств</h1>
           <div className="flex justify-between mt-2 text-sm font-medium text-black">
@@ -716,7 +696,7 @@ function App() {
               <button onClick={() => setSelectedYear(y => y + 1)} className="p-1 hover:bg-white rounded shadow-sm text-gray-500"><ChevronRight size={14} /></button>
             </div>
 
-            {!isGuestMode && (
+            {!isSystemGuest && (
               <div className="flex bg-gray-100 p-1 rounded-lg overflow-x-auto hide-scrollbars">
                 <button onClick={() => setActiveTab('dashboard')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}><LayoutDashboard size={14} /> <span className="hidden sm:inline">Дашборд</span></button>
                 <button onClick={() => setActiveTab('admin')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'admin' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}><Settings size={14} /> <span className="hidden sm:inline">Админ-панель</span></button>
@@ -724,14 +704,16 @@ function App() {
               </div>
             )}
 
-            <button
-              onClick={toggleGuestMode}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${isGuestMode ? 'bg-indigo-100 text-indigo-700 shadow-sm border border-indigo-200' : 'bg-white text-gray-700 shadow-sm border border-gray-200'}`}
-              title="Для демонстрации: переключает приложение в гостевой режим чтения"
-            >
-              {isGuestMode ? <EyeOff size={14} /> : <Share2 size={14} />}
-              <span className="hidden sm:inline">{isGuestMode ? 'Выйти из гостевого' : 'Гостевой вид'}</span>
-            </button>
+            {!isSystemGuest && (
+              <button
+                onClick={toggleGuestMode}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${isGuestMode ? 'bg-indigo-100 text-indigo-700 shadow-sm border border-indigo-200' : 'bg-white text-gray-700 shadow-sm border border-gray-200'}`}
+                title="Для демонстрации: переключает приложение в гостевой режим чтения"
+              >
+                {isGuestMode ? <EyeOff size={14} /> : <Share2 size={14} />}
+                <span className="hidden sm:inline">{isGuestMode ? 'Выйти из гостевого' : 'Гостевой вид'}</span>
+              </button>
+            )}
           </div>
         </header>
 
@@ -739,7 +721,7 @@ function App() {
           <div className="bg-indigo-50 border border-indigo-100 text-indigo-800 px-4 py-3 rounded-xl text-sm flex items-center gap-3 print:hidden">
             <Eye size={18} className="text-indigo-500" />
             <div>
-              <p className="font-semibold">Активен гостевой вид (Предпросмотр по ссылке)</p>
+              <p className="font-semibold">Активен гостевой вид {isSystemGuest ? '(Вход по ссылке)' : '(Предпросмотр)'}</p>
               <p className="text-indigo-600/80 mt-0.5">Некоторые статьи скрыты. Редактирование, история изменений и добавление факта недоступны.</p>
             </div>
           </div>
@@ -783,7 +765,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'admin' && !isGuestMode && (
+        {activeTab === 'admin' && !isSystemGuest && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Добавить новую статью</h3>
@@ -836,7 +818,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'backups' && !isGuestMode && (
+        {activeTab === 'backups' && !isSystemGuest && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
               <div><h3 className="text-lg font-semibold text-gray-900">Создать резервную копию</h3><p className="text-sm text-gray-500 mt-1">Сохраните текущее состояние бюджета перед внесением больших изменений.</p></div>
@@ -893,6 +875,15 @@ export default function ProtectedApp() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(true);
+  
+  // Распознаем, перешли ли по гостевой ссылке
+  const [isGuestLink, setIsGuestLink] = useState(window.location.hash === '#guest');
+
+  useEffect(() => {
+    const handleHashChange = () => setIsGuestLink(window.location.hash === '#guest');
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
@@ -906,23 +897,31 @@ export default function ProtectedApp() {
     e.preventDefault();
     setError('');
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      // Если мы на гостевой ссылке, подставляем системный email гостя
+      const loginEmail = isGuestLink ? 'guest@res-kt.ru' : email;
+      await signInWithEmailAndPassword(auth, loginEmail, password);
     } catch (err) {
-      setError('Неверный email или пароль. Попробуйте снова.');
+      setError('Неверный пароль. Попробуйте снова.');
     }
   };
 
   if (checking) return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-sans text-gray-500">Загрузка защищенного соединения...</div>;
 
   if (user) {
+    const isSystemGuest = user.email === 'guest@res-kt.ru';
+    
     return (
       <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-12">
         <div className="bg-gray-900 text-white px-6 py-2 flex justify-between items-center text-xs font-sans print:hidden">
-          <span className="opacity-70">Защищенная сессия: {user.email}</span>
-          <button onClick={() => signOut(auth)} className="hover:text-rose-400 transition-colors">Выйти из системы</button>
+          <span className="opacity-70">
+            {isSystemGuest ? 'Гостевой просмотр' : `Защищенная сессия: ${user.email}`}
+          </span>
+          <button onClick={() => signOut(auth)} className="hover:text-rose-400 transition-colors">
+            Выйти из системы
+          </button>
         </div>
         <div className="p-4 md:p-8 print:p-0">
-          <App />
+          <App isSystemGuest={isSystemGuest} />
         </div>
       </div>
     );
@@ -933,19 +932,40 @@ export default function ProtectedApp() {
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-sm w-full">
         <div className="text-center mb-6">
           <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            {isGuestLink ? <Eye size={24} /> : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>}
           </div>
-          <h2 className="text-xl font-bold text-gray-900">Бюджет РЭС КТ</h2>
-          <p className="text-sm text-gray-500 mt-1">Авторизуйтесь для доступа к данным</p>
+          <h2 className="text-xl font-bold text-gray-900">
+            {isGuestLink ? 'Гостевой доступ' : 'Бюджет РЭС КТ'}
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {isGuestLink ? 'Введите гостевой пароль для просмотра' : 'Авторизуйтесь для полного доступа'}
+          </p>
         </div>
+        
         <form onSubmit={handleLogin} className="space-y-4">
-          <div><input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 outline-none transition-colors" required /></div>
+          {!isGuestLink && (
+            <div>
+              <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 outline-none transition-colors" required />
+            </div>
+          )}
           <div>
             <input type="password" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 outline-none transition-colors" required />
             {error && <p className="text-xs text-rose-500 mt-1.5 text-center">{error}</p>}
           </div>
-          <button type="submit" className="w-full py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm">Войти</button>
+          <button type="submit" className="w-full py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm">
+            Войти
+          </button>
         </form>
+        
+        {/* Кнопка-переключалка внизу на случай, если админ зашел по гостевой ссылке */}
+        <div className="mt-6 text-center">
+          <button 
+            onClick={() => setIsGuestLink(!isGuestLink)} 
+            className="text-[11px] text-gray-400 hover:text-blue-500 transition-colors"
+          >
+            {isGuestLink ? 'Перейти к панели администратора' : 'Войти по гостевому паролю'}
+          </button>
+        </div>
       </div>
     </div>
   );
