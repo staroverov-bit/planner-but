@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, TrendingUp, TrendingDown, PiggyBank, Calendar, ChevronLeft, ChevronRight, Check, X, ChevronDown, LayoutDashboard, Settings, Trash2, Edit2, History, Save, RotateCcw } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, PiggyBank, Calendar, ChevronLeft, ChevronRight, Check, X, ChevronDown, LayoutDashboard, Settings, Trash2, Edit2, History, Save, RotateCcw, Download, Eye, EyeOff, Share2 } from 'lucide-react';
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, setDoc, onSnapshot, writeBatch, deleteDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -13,14 +13,40 @@ const monthNames = [
 const shortMonthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
 const quarterNames = ['1 Квартал', '2 Квартал', '3 Квартал', '4 Квартал'];
 
-// Стартовые данные
+// Сырые стартовые данные
 const rawBudgetItems = [
+  // --- ПОСТУПЛЕНИЯ ---
   { id: 101, type: 'income', group: 'Основные поступления', name: 'Остаток с предыдущего периода', planYear: 1000000, fact: [1000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
   { id: 102, type: 'income', group: 'Основные поступления', name: 'Продажи с сайта', planYear: 5000000, fact: [250000, 300000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
   { id: 103, type: 'income', group: 'Маркетинговые услуги', name: 'РЭС Инжиниринг', planYear: 2000000, fact: [150000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 104, type: 'income', group: 'Маркетинговые услуги', name: 'Атомные тигры', planYear: 1500000, fact: [100000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 105, type: 'income', group: 'Маркетинговые услуги', name: 'РЭС Спэйс', planYear: 1000000, fact: [80000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 106, type: 'income', group: 'Маркетинговые услуги', name: 'РЭС Проджект', planYear: 500000, fact: [40000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 107, type: 'income', group: 'Основные поступления', name: 'Прочие поступления', planYear: 200000, fact: [10000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+
+  // --- РАСХОДЫ (Выплаты) ---
   { id: 1, type: 'expense', group: 'ФОТ + налоги на ФОТ', name: 'Заработная плата', planYear: 12000000, fact: [1000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 2, type: 'expense', group: 'ФОТ + налоги на ФОТ', name: 'Налоги на ФОТ', planYear: 3600000, fact: [300000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 3, type: 'expense', group: 'ФОТ + налоги на ФОТ', name: 'Премии сотрудникам', planYear: 500000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 4, type: 'expense', group: 'ФОТ + налоги на ФОТ', name: 'Аутсорс бухгалтерия', planYear: 240000, fact: [20000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 5, type: 'expense', group: 'Общие', name: 'Приобретение ОС', planYear: 100000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
   { id: 6, type: 'expense', group: 'Общие', name: 'Закупка материалов', planYear: 3750000, fact: [300000, 150000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 7, type: 'expense', group: 'Общие', name: 'ПО', planYear: 150000, fact: [10000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 8, type: 'expense', group: 'Общие', name: 'Сайт', planYear: 600000, fact: [50000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 9, type: 'expense', group: 'Общие', name: 'Съемки', planYear: 400000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
   { id: 10, type: 'expense', group: 'Общие', name: 'Реклама', planYear: 1800000, fact: [100000, 50000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 11, type: 'expense', group: 'Командировочные', name: 'Суточные', planYear: 150000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 12, type: 'expense', group: 'Командировочные', name: 'Билеты', planYear: 300000, fact: [45000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 13, type: 'expense', group: 'Командировочные', name: 'Проживание', planYear: 250000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 14, type: 'expense', group: 'Командировочные', name: 'Прочие в командировках', planYear: 50000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 15, type: 'expense', group: 'Персонал', name: 'Обучение персонала', planYear: 100000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 16, type: 'expense', group: 'Персонал', name: 'ДМС', planYear: 232428, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 17, type: 'expense', group: 'Административные', name: 'Аренда офис', planYear: 408000, fact: [34000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 18, type: 'expense', group: 'Административные', name: 'Лицензии, сертификаты, подписки', planYear: 50000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 19, type: 'expense', group: 'Административные', name: 'Доставка и курьерские услуги', planYear: 60000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 20, type: 'expense', group: 'Административные', name: 'РКО и касса', planYear: 25000, fact: [2000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 21, type: 'expense', group: 'Административные', name: 'УСН', planYear: 1000000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 22, type: 'expense', group: 'Административные', name: 'Прочее', planYear: 100000, fact: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
 ];
 
 const initialBudgetItems = rawBudgetItems.map(item => {
@@ -36,7 +62,10 @@ const initialBudgetItems = rawBudgetItems.map(item => {
   const fact26 = item.fact || Array(12).fill(0);
   fact26.forEach((val, idx) => {
     if (val !== 0) {
-      transactions.push({ id: Math.random().toString(), year: 2026, month: idx, amount: val, comment: 'Начальный факт', date: '' });
+      transactions.push({
+        id: Math.random().toString(),
+        year: 2026, month: idx, amount: val, comment: 'Начальный факт', date: ''
+      });
     }
   });
   return {
@@ -64,9 +93,9 @@ const getValueForPeriod = (yearlyData, year, period, monthIdx, quarterIdx) => {
 // --- ОСНОВНОЕ ПРИЛОЖЕНИЕ ---
 function App() {
   const [items, setItems] = useState([]);
-  const [backups, setBackups] = useState([]);
-  const [isDbLoaded, setIsDbLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isGuestMode, setIsGuestMode] = useState(false);
+  const [isDbLoaded, setIsDbLoaded] = useState(false);
   
   const [selectedYear, setSelectedYear] = useState(2026);
   const [period, setPeriod] = useState('month'); 
@@ -80,15 +109,21 @@ function App() {
   const [newItemName, setNewItemName] = useState('');
   const [newItemGroup, setNewItemGroup] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+
+  const [sensitiveGroups, setSensitiveGroups] = useState(['ФОТ + налоги на ФОТ']);
+  const [sensitiveItems, setSensitiveItems] = useState(['Аутсорс бухгалтерия']);
+  const [isGuestSettingsOpen, setIsGuestSettingsOpen] = useState(false);
+
   const [collapsedGroups, setCollapsedGroups] = useState({});
   const [expandedItems, setExpandedItems] = useState({});
+
+  const [backups, setBackups] = useState([]);
   const [backupComment, setBackupComment] = useState('');
   const [confirmRestoreId, setConfirmRestoreId] = useState(null);
   const [confirmDeleteBackupId, setConfirmDeleteBackupId] = useState(null);
 
-  // --- ВОССТАНОВЛЕННАЯ ЗАГРУЗКА ИЗ FIREBASE ---
+  // --- ЗАГРУЗКА ИЗ FIREBASE ---
   useEffect(() => {
-    // 1. Подключаем вашу старую коллекцию budgetItems
     const unsub = onSnapshot(collection(db, 'budgetItems'), (snapshot) => {
       if (snapshot.empty) {
         const batch = writeBatch(db);
@@ -105,33 +140,38 @@ function App() {
       }
     });
 
-    // 2. Отдельно подтягиваем бекапы
     getDoc(doc(db, 'system', 'backups')).then(snap => {
       if (snap.exists()) {
-        setBackups(snap.data().list || []);
+        const data = snap.data();
+        setBackups(data.list || []);
+        if (data.sensitiveGroups) setSensitiveGroups(data.sensitiveGroups);
+        if (data.sensitiveItems) setSensitiveItems(data.sensitiveItems);
       }
     });
 
     return () => unsub();
   }, []);
 
-  // --- ЕДИНАЯ ФУНКЦИЯ СОХРАНЕНИЯ (СОВМЕСТИМАЯ СО СТАРЫМ ФОРМАТОМ) ---
-  const updateData = async (newItems, newBackups = backups) => {
+  // --- ЕДИНАЯ ФУНКЦИЯ СОХРАНЕНИЯ ---
+  const updateData = async (newItems, newBackups = backups, newSensGroups = sensitiveGroups, newSensItems = sensitiveItems) => {
     setItems(newItems);
     setBackups(newBackups);
+    setSensitiveGroups(newSensGroups);
+    setSensitiveItems(newSensItems);
     
     try {
       const batch = writeBatch(db);
-      
-      // Перезаписываем каждую измененную статью в ее отдельный документ
       newItems.forEach(item => {
         const docRef = doc(db, 'budgetItems', item.id.toString());
         batch.set(docRef, item);
       });
       
-      // Сохраняем бекапы отдельно
-      const backupsRef = doc(db, 'system', 'backups');
-      batch.set(backupsRef, { list: newBackups });
+      const systemRef = doc(db, 'system', 'backups');
+      batch.set(systemRef, { 
+        list: newBackups,
+        sensitiveGroups: newSensGroups,
+        sensitiveItems: newSensItems
+      }, { merge: true });
       
       await batch.commit();
     } catch (error) {
@@ -139,17 +179,11 @@ function App() {
     }
   };
 
-  // Удаление статьи полностью
-  const executeDelete = async (id) => {
-    const newItems = items.filter(item => item.id !== id);
-    setItems(newItems);
-    setConfirmDeleteId(null);
-    try {
-      // Принудительно удаляем файл из базы
-      await deleteDoc(doc(db, 'budgetItems', id.toString()));
-    } catch (error) {
-      console.error("Ошибка удаления:", error);
-    }
+  // Переключение гостевого режима
+  const toggleGuestMode = () => {
+    const nextMode = !isGuestMode;
+    setIsGuestMode(nextMode);
+    if (nextMode) setActiveTab('dashboard');
   };
 
   const toggleGroup = (groupName) => setCollapsedGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }));
@@ -171,9 +205,14 @@ function App() {
     if (period === 'quarter') setSelectedQuarter(prev => (prev < 3 ? prev + 1 : 0));
   };
 
+  const displayItems = useMemo(() => {
+    if (!isGuestMode) return items;
+    return items.filter(item => !sensitiveGroups.includes(item.group) && !sensitiveItems.includes(item.name));
+  }, [items, isGuestMode, sensitiveGroups, sensitiveItems]);
+
   const { incomePlan, incomeFact, expensePlan, expenseFact } = useMemo(() => {
-    if (!items.length) return { incomePlan: 0, incomeFact: 0, expensePlan: 0, expenseFact: 0 };
-    return items.reduce((acc, item) => {
+    if (!displayItems.length) return { incomePlan: 0, incomeFact: 0, expensePlan: 0, expenseFact: 0 };
+    return displayItems.reduce((acc, item) => {
       const currentPlan = getValueForPeriod(item.plan, selectedYear, period, selectedMonth, selectedQuarter);
       const currentFact = getValueForPeriod(item.fact, selectedYear, period, selectedMonth, selectedQuarter);
       if (item.type === 'income') {
@@ -185,13 +224,13 @@ function App() {
       }
       return acc;
     }, { incomePlan: 0, incomeFact: 0, expensePlan: 0, expenseFact: 0 });
-  }, [items, selectedYear, period, selectedMonth, selectedQuarter]);
+  }, [displayItems, selectedYear, period, selectedMonth, selectedQuarter]);
 
   const balancePlan = incomePlan - expensePlan;
   const balanceFact = incomeFact - expenseFact;
 
   const groupItemsByType = (type) => {
-    const filtered = items.filter(i => i.type === type);
+    const filtered = displayItems.filter(i => i.type === type);
     const groupsMap = {};
     filtered.forEach(item => {
       const gName = item.group || 'Без группы';
@@ -209,21 +248,21 @@ function App() {
     return Object.values(groupsMap).sort((a, b) => a.name.localeCompare(b.name));
   };
 
-  const groupedIncomes = useMemo(() => groupItemsByType('income'), [items]);
-  const groupedExpenses = useMemo(() => groupItemsByType('expense'), [items]);
+  const groupedIncomes = useMemo(() => groupItemsByType('income'), [displayItems]);
+  const groupedExpenses = useMemo(() => groupItemsByType('expense'), [displayItems]);
 
-  // ДАШБОРД: Изменения данных
-  const handleExpenseInputChange = (id, field, value) => setExpenseInputs(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+  const handleExpenseInputChange = (id, field, value) => {
+    if (isGuestMode) return;
+    setExpenseInputs(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+  };
 
   const handleAddFact = (id) => {
+    if (isGuestMode) return;
     const inputData = expenseInputs[id] || {};
     const amountToAdd = parseFloat(inputData.amount);
     if (isNaN(amountToAdd) || amountToAdd === 0) return;
 
-    let targetMonthIndex;
-    if (period === 'month') targetMonthIndex = selectedMonth;
-    else if (period === 'quarter') targetMonthIndex = inputData.month !== undefined ? parseInt(inputData.month) : selectedQuarter * 3;
-    else targetMonthIndex = inputData.month !== undefined ? parseInt(inputData.month) : 0;
+    let targetMonthIndex = period === 'month' ? selectedMonth : period === 'quarter' ? (inputData.month !== undefined ? parseInt(inputData.month) : selectedQuarter * 3) : (inputData.month !== undefined ? parseInt(inputData.month) : 0);
 
     const newTx = {
       id: Date.now().toString(), year: selectedYear, month: targetMonthIndex, amount: amountToAdd,
@@ -248,6 +287,7 @@ function App() {
   };
 
   const handleDeleteTransaction = (itemId, txId) => {
+    if (isGuestMode) return;
     const newItems = items.map(item => {
       if (item.id === itemId) {
         const tx = item.transactions.find(t => t.id === txId);
@@ -264,6 +304,7 @@ function App() {
   };
 
   const startEditingTx = (tx) => {
+    if (isGuestMode) return;
     setEditingTxId(tx.id);
     setEditTxData({ date: tx.date || shortMonthNames[tx.month], comment: tx.comment || '' });
   };
@@ -285,6 +326,7 @@ function App() {
   const cancelEditingTx = () => setEditingTxId(null);
 
   const handleDirectFactUpdate = (id, value) => {
+    if (isGuestMode) return;
     const numValue = parseFloat(value) || 0;
     const newItems = items.map(item => {
       if (item.id === id) {
@@ -301,6 +343,7 @@ function App() {
   };
 
   const handleFactBlur = (id, value) => {
+    if (isGuestMode) return;
     const numValue = parseFloat(value) || 0;
     let isChanged = false;
     const newItems = items.map(item => {
@@ -322,7 +365,6 @@ function App() {
     if (isChanged) updateData(newItems);
   };
 
-  // АДМИН-ПАНЕЛЬ
   const handleAdminAddItem = (e) => {
     e.preventDefault();
     if (!newItemName || !newItemGroup) return;
@@ -354,8 +396,16 @@ function App() {
     updateData(newItems);
   };
 
+  const executeDelete = async (id) => {
+    updateData(items.filter(item => item.id !== id));
+    setConfirmDeleteId(null);
+    try {
+      await deleteDoc(doc(db, 'budgetItems', id.toString()));
+    } catch (error) {
+      console.error("Ошибка удаления:", error);
+    }
+  };
 
-  // УПРАВЛЕНИЕ БЕКАПАМИ
   const createBackup = (e) => {
     e?.preventDefault();
     const newBackup = {
@@ -382,6 +432,26 @@ function App() {
     setConfirmDeleteBackupId(null);
   };
 
+  const toggleSensitiveGroup = (groupName) => {
+    const newGroups = sensitiveGroups.includes(groupName) ? sensitiveGroups.filter(g => g !== groupName) : [...sensitiveGroups, groupName];
+    updateData(items, backups, newGroups, sensitiveItems);
+  };
+
+  const toggleSensitiveItem = (itemName) => {
+    const newItemsList = sensitiveItems.includes(itemName) ? sensitiveItems.filter(i => i !== itemName) : [...sensitiveItems, itemName];
+    updateData(items, backups, sensitiveGroups, newItemsList);
+  };
+
+  const allGroupedItemsForAdmin = useMemo(() => {
+    const groupsMap = {};
+    items.forEach(item => {
+      const gName = item.group || 'Без группы';
+      if (!groupsMap[gName]) groupsMap[gName] = { name: gName, items: new Set() };
+      groupsMap[gName].items.add(item.name);
+    });
+    return Object.values(groupsMap).map(g => ({ ...g, items: Array.from(g.items) })).sort((a,b) => a.name.localeCompare(b.name));
+  }, [items]);
+
   if (!isDbLoaded) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-sans text-gray-500 text-sm">Подключение к базе данных...</div>;
   }
@@ -394,27 +464,26 @@ function App() {
     subPeriodLabel = `${quarterNames[selectedQuarter]} (${startM}-${endM})`;
   }
 
-  // РЕНДЕР ТАБЛИЦ ДАШБОРДА
   const renderDashboardTable = (title, groupedData, isIncome) => {
     const headerColor = isIncome ? 'bg-emerald-50/60' : 'bg-rose-50/60';
     const titleColor = isIncome ? 'text-emerald-900' : 'text-rose-900';
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-        <div className={`py-3 px-4 border-b border-gray-100 ${headerColor}`}>
-          <h2 className={`text-base font-bold ${titleColor}`}>{title}</h2>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6 print:mb-4 print:border-gray-300 print:shadow-none">
+        <div className={`py-3 px-4 border-b border-gray-100 ${headerColor} print:bg-gray-100 print:border-gray-300`}>
+          <h2 className={`text-base font-bold ${titleColor} print:text-black`}>{title}</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 border-b-2 border-gray-200 text-sm text-gray-600">
+              <tr className="bg-gray-50 border-b-2 border-gray-200 text-sm text-gray-600 print:bg-white print:border-gray-300 print:text-black">
                 <th className="py-2 px-4 font-semibold">Статья {isIncome ? 'поступлений' : 'расходов'}</th>
                 <th className="py-2 px-4 font-semibold w-32">План</th>
                 <th className="py-2 px-4 font-semibold w-32">Факт</th>
                 <th className="py-2 px-4 font-semibold w-32">Остаток</th>
-                <th className="py-2 px-4 font-semibold text-right min-w-[360px]">Внесение факта</th>
+                {!isGuestMode && <th className="py-2 px-4 font-semibold text-right min-w-[360px] print:hidden">Внесение факта</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 text-sm">
+            <tbody className="divide-y divide-gray-100 text-sm print:divide-gray-300">
               {groupedData.map((group) => {
                 const isCollapsed = collapsedGroups[group.name];
                 const groupPlan = getValueForPeriod(group.plan, selectedYear, period, selectedMonth, selectedQuarter);
@@ -431,14 +500,14 @@ function App() {
                       <td className="py-2 px-4 font-bold text-gray-800">{formatCurrency(groupPlan)}</td>
                       <td className="py-2 px-4">
                         <span className="font-bold text-gray-800">{formatCurrency(groupFact)}</span>
-                        <div className="w-20 h-1 bg-gray-200 rounded-full mt-1 overflow-hidden">
+                        <div className="w-20 h-1 bg-gray-200 rounded-full mt-1 overflow-hidden print:hidden">
                           <div className={`h-full rounded-full ${groupPercentSpent > 100 ? (isIncome ? 'bg-emerald-500' : 'bg-rose-500') : 'bg-gray-400'}`} style={{ width: `${Math.min(groupPercentSpent, 100)}%` }} />
                         </div>
                       </td>
                       <td className="py-2 px-4 font-bold">
-                        <span className={`${groupRemaining < 0 ? (isIncome ? 'text-emerald-600' : 'text-rose-600') : 'text-gray-600'}`}>{formatCurrency(Math.abs(groupRemaining))} {groupRemaining < 0 && (isIncome ? '(перевып.)' : '(перерасх.)')}</span>
+                        <span className={`${groupRemaining < 0 ? (isIncome ? 'text-emerald-600' : 'text-rose-600') : 'text-gray-600'} print:text-black`}>{formatCurrency(Math.abs(groupRemaining))} {groupRemaining < 0 && (isIncome ? '(перевып.)' : '(перерасх.)')}</span>
                       </td>
-                      <td className="py-2 px-4 text-right text-xs text-gray-400">Итого по группе</td>
+                      {!isGuestMode && <td className="py-2 px-4 text-right text-xs text-gray-400 print:hidden">Итого по группе</td>}
                     </tr>
                     {!isCollapsed && group.items.map((item) => {
                       const currentPlan = getValueForPeriod(item.plan, selectedYear, period, selectedMonth, selectedQuarter);
@@ -462,49 +531,54 @@ function App() {
                         <React.Fragment key={item.id}>
                           <tr className="hover:bg-blue-50/20 transition-colors group">
                             <td className="py-1.5 px-4 pl-8 flex items-center gap-2">
-                              <button onClick={() => toggleItem(item.id)} className="text-gray-400 hover:text-blue-600 transition-colors"><ChevronRight size={16} className={`transform transition-transform ${isItemExpanded ? 'rotate-90 text-blue-500' : ''}`} /></button>
+                              <button onClick={() => toggleItem(item.id)} className="text-gray-400 hover:text-blue-600 transition-colors print:hidden"><ChevronRight size={16} className={`transform transition-transform ${isItemExpanded ? 'rotate-90 text-blue-500' : ''}`} /></button>
                               <span className="font-medium text-gray-800">{item.name}</span>
                             </td>
-                            <td className="py-1.5 px-4 text-gray-600">{formatCurrency(currentPlan)}</td>
+                            <td className="py-1.5 px-4 text-gray-600 print:text-black">{formatCurrency(currentPlan)}</td>
                             <td className="py-1.5 px-4">
-                              {period === 'month' ? (
-                                <input type="number" className={`w-24 bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-400 focus:bg-white rounded px-1 py-0.5 outline-none transition-all hide-arrows font-medium ${isIncome ? 'text-emerald-700' : 'text-rose-600'}`} value={currentFact === 0 ? '' : currentFact} placeholder="0" onChange={(e) => handleDirectFactUpdate(item.id, e.target.value)} onBlur={(e) => handleFactBlur(item.id, e.target.value)} />
+                              {period === 'month' && !isGuestMode ? (
+                                <>
+                                  <input type="number" className={`w-24 bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-400 focus:bg-white rounded px-1 py-0.5 outline-none transition-all hide-arrows font-medium ${isIncome ? 'text-emerald-700' : 'text-rose-600'} print:hidden`} value={currentFact === 0 ? '' : currentFact} placeholder="0" onChange={(e) => handleDirectFactUpdate(item.id, e.target.value)} onBlur={(e) => handleFactBlur(item.id, e.target.value)} />
+                                  <span className="hidden print:inline font-medium text-black">{formatCurrency(currentFact)}</span>
+                                </>
                               ) : (
-                                <span className={isIncome ? 'text-emerald-700 font-medium px-1' : 'text-rose-600 font-medium px-1'}>{formatCurrency(currentFact)}</span>
+                                <span className={isIncome ? 'text-emerald-700 font-medium px-1 print:text-black' : 'text-rose-600 font-medium px-1 print:text-black'}>{formatCurrency(currentFact)}</span>
                               )}
-                              <div className="w-20 h-1 bg-gray-100 rounded-full mt-1 overflow-hidden ml-1">
+                              <div className="w-20 h-1 bg-gray-100 rounded-full mt-1 overflow-hidden ml-1 print:hidden">
                                 <div className={`h-full rounded-full ${percentSpent > 100 ? (isIncome ? 'bg-emerald-500' : 'bg-rose-500') : 'bg-blue-400'}`} style={{ width: `${Math.min(percentSpent, 100)}%` }} />
                               </div>
                             </td>
                             <td className="py-1.5 px-4">
-                              <span className={`${remaining < 0 ? (isIncome ? 'text-emerald-600' : 'text-rose-600') : 'text-gray-600'}`}>{formatCurrency(Math.abs(remaining))}</span>
+                              <span className={`${remaining < 0 ? (isIncome ? 'text-emerald-600' : 'text-rose-600') : 'text-gray-600'} print:text-black`}>{formatCurrency(Math.abs(remaining))}</span>
                             </td>
-                            <td className="py-1.5 px-4 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                {period !== 'month' && (
-                                  <select className="px-1.5 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" value={inputData.month ?? defaultTargetMonth} onChange={(e) => handleExpenseInputChange(item.id, 'month', e.target.value)}>
-                                    {period === 'quarter' ? [0, 1, 2].map(offset => { const mIdx = selectedQuarter * 3 + offset; return <option key={mIdx} value={mIdx}>{shortMonthNames[mIdx]}</option> }) : monthNames.map((mName, idx) => <option key={idx} value={idx}>{shortMonthNames[idx]}</option>)}
-                                  </select>
-                                )}
-                                <input type="number" placeholder="Сумма" className="w-20 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" value={inputData.amount || ''} onChange={(e) => handleExpenseInputChange(item.id, 'amount', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddFact(item.id)} />
-                                <input type="text" placeholder="Комментарий..." className="w-32 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" value={inputData.comment || ''} onChange={(e) => handleExpenseInputChange(item.id, 'comment', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddFact(item.id)} />
-                                <button onClick={() => handleAddFact(item.id)} className={`p-1 rounded-lg transition-colors ${isIncome ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}><Plus size={16} /></button>
-                              </div>
-                            </td>
+                            {!isGuestMode && (
+                              <td className="py-1.5 px-4 text-right print:hidden">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  {period !== 'month' && (
+                                    <select className="px-1.5 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" value={inputData.month ?? defaultTargetMonth} onChange={(e) => handleExpenseInputChange(item.id, 'month', e.target.value)}>
+                                      {period === 'quarter' ? [0, 1, 2].map(offset => { const mIdx = selectedQuarter * 3 + offset; return <option key={mIdx} value={mIdx}>{shortMonthNames[mIdx]}</option> }) : monthNames.map((mName, idx) => <option key={idx} value={idx}>{shortMonthNames[idx]}</option>)}
+                                    </select>
+                                  )}
+                                  <input type="number" placeholder="Сумма" className="w-20 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" value={inputData.amount || ''} onChange={(e) => handleExpenseInputChange(item.id, 'amount', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddFact(item.id)} />
+                                  <input type="text" placeholder="Комментарий..." className="w-32 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" value={inputData.comment || ''} onChange={(e) => handleExpenseInputChange(item.id, 'comment', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddFact(item.id)} />
+                                  <button onClick={() => handleAddFact(item.id)} className={`p-1 rounded-lg transition-colors ${isIncome ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}><Plus size={16} /></button>
+                                </div>
+                              </td>
+                            )}
                           </tr>
                           {isItemExpanded && filteredTransactions.map((tx) => (
                             <React.Fragment key={tx.id}>
-                              {editingTxId === tx.id ? (
+                              {editingTxId === tx.id && !isGuestMode ? (
                                 <tr className="bg-blue-50/40 transition-colors">
                                   <td className="py-1 px-4 pl-14 flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-300"></div>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-300 print:bg-gray-500"></div>
                                     <input type="text" className="w-14 px-1 py-0.5 text-[11px] border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white" value={editTxData.date} onChange={(e) => setEditTxData({...editTxData, date: e.target.value})} placeholder="ДД.ММ" />
                                     <input type="text" className="w-full max-w-[200px] px-1 py-0.5 text-xs border border-blue-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white" value={editTxData.comment} onChange={(e) => setEditTxData({...editTxData, comment: e.target.value})} placeholder="Комментарий" />
                                   </td>
-                                  <td className="py-1 px-4 text-gray-400 text-xs">—</td>
-                                  <td className="py-1 px-4 pl-5"><span className={`text-xs font-semibold ${isIncome ? 'text-emerald-600' : 'text-rose-500'}`}>{formatCurrency(tx.amount)}</span></td>
-                                  <td className="py-1 px-4 text-gray-400 text-xs">—</td>
-                                  <td className="py-1 px-4 text-right">
+                                  <td className="py-1 px-4 text-gray-400 text-xs print:text-black">—</td>
+                                  <td className="py-1 px-4 pl-5"><span className={`text-xs font-semibold ${isIncome ? 'text-emerald-600' : 'text-rose-500'} print:text-black`}>{formatCurrency(tx.amount)}</span></td>
+                                  <td className="py-1 px-4 text-gray-400 text-xs print:text-black">—</td>
+                                  <td className="py-1 px-4 text-right print:hidden">
                                     <div className="flex items-center justify-end gap-1">
                                       <button onClick={() => saveEditingTx(item.id, tx.id)} className="text-emerald-600 hover:bg-emerald-100 p-1 rounded transition-colors"><Check size={13} /></button>
                                       <button onClick={cancelEditingTx} className="text-rose-500 hover:bg-rose-100 p-1 rounded transition-colors"><X size={13} /></button>
@@ -514,25 +588,27 @@ function App() {
                               ) : (
                                 <tr className="bg-gray-50/60 hover:bg-gray-100 transition-colors">
                                   <td className="py-1 px-4 pl-14 flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
-                                    <span className="text-[11px] font-medium text-gray-400 w-12">{tx.date || shortMonthNames[tx.month]}</span>
-                                    <span className="text-xs text-gray-600">{tx.comment || 'Без комментария'}</span>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300 print:bg-gray-500"></div>
+                                    <span className="text-[11px] font-medium text-gray-400 w-12 print:text-gray-600">{tx.date || shortMonthNames[tx.month]}</span>
+                                    <span className="text-xs text-gray-600 print:text-black">{tx.comment || 'Без комментария'}</span>
                                   </td>
-                                  <td className="py-1 px-4 text-gray-400 text-xs">—</td>
-                                  <td className="py-1 px-4 pl-5"><span className={`text-xs font-semibold ${isIncome ? 'text-emerald-600' : 'text-rose-500'}`}>{formatCurrency(tx.amount)}</span></td>
-                                  <td className="py-1 px-4 text-gray-400 text-xs">—</td>
-                                  <td className="py-1 px-4 text-right">
-                                    <div className="flex items-center justify-end gap-1">
-                                      <button onClick={() => startEditingTx(tx)} className="text-gray-400 hover:text-blue-500 p-1 rounded transition-colors"><Edit2 size={13} /></button>
-                                      <button onClick={() => handleDeleteTransaction(item.id, tx.id)} className="text-gray-400 hover:text-rose-500 p-1 rounded transition-colors"><Trash2 size={13} /></button>
-                                    </div>
-                                  </td>
+                                  <td className="py-1 px-4 text-gray-400 text-xs print:text-black">—</td>
+                                  <td className="py-1 px-4 pl-5"><span className={`text-xs font-semibold ${isIncome ? 'text-emerald-600' : 'text-rose-500'} print:text-black`}>{formatCurrency(tx.amount)}</span></td>
+                                  <td className="py-1 px-4 text-gray-400 text-xs print:text-black">—</td>
+                                  {!isGuestMode && (
+                                    <td className="py-1 px-4 text-right print:hidden">
+                                      <div className="flex items-center justify-end gap-1">
+                                        <button onClick={() => startEditingTx(tx)} className="text-gray-400 hover:text-blue-500 p-1 rounded transition-colors"><Edit2 size={13} /></button>
+                                        <button onClick={() => handleDeleteTransaction(item.id, tx.id)} className="text-gray-400 hover:text-rose-500 p-1 rounded transition-colors"><Trash2 size={13} /></button>
+                                      </div>
+                                    </td>
+                                  )}
                                 </tr>
                               )}
                             </React.Fragment>
                           ))}
                           {isItemExpanded && filteredTransactions.length === 0 && (
-                            <tr className="bg-gray-50/60"><td colSpan="5" className="py-2 px-4 pl-14 text-xs text-gray-400 italic">Нет детализированных записей за выбранный период</td></tr>
+                            <tr className="bg-gray-50/60"><td colSpan={isGuestMode ? "4" : "5"} className="py-2 px-4 pl-14 text-xs text-gray-400 italic">Нет детализированных записей за выбранный период</td></tr>
                           )}
                         </React.Fragment>
                       );
@@ -547,7 +623,6 @@ function App() {
     );
   };
 
-  // РЕНДЕР ТАБЛИЦ АДМИН-ПАНЕЛИ
   const renderAdminTable = (title, data, isIncome) => {
     const headerColor = isIncome ? 'bg-emerald-50/60' : 'bg-rose-50/60';
     const titleColor = isIncome ? 'text-emerald-900' : 'text-rose-900';
@@ -599,52 +674,95 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800 print:p-0 print:bg-white">
       <style>{`
         .hide-arrows::-webkit-inner-spin-button, .hide-arrows::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .hide-arrows { -moz-appearance: textfield; }
+        @media print {
+          @page { size: A4 portrait; margin: 15mm; }
+          body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .hide-scrollbars { overflow: visible !important; }
+        }
       `}</style>
       
-      <div className="max-w-[1400px] mx-auto space-y-6">
-        <header className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4 md:gap-6">
+      <div className="max-w-[1400px] mx-auto space-y-6 print:max-w-none print:space-y-4">
+        
+        {/* СПЕЦИАЛЬНЫЙ ЗАГОЛОВОК ДЛЯ ПЕЧАТИ */}
+        <div className="hidden print:block mb-4">
+          <h1 className="text-2xl font-bold text-black uppercase tracking-wide border-b-2 border-black pb-2">Отчет о движении денежных средств</h1>
+          <div className="flex justify-between mt-2 text-sm font-medium text-black">
+            <span>Период: {subPeriodLabel}</span>
+            <span>Сформировано: {new Date().toLocaleDateString('ru-RU')}</span>
+          </div>
+        </div>
+
+        <header className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
+          <div className="flex items-center justify-between w-full md:w-auto gap-4 md:gap-6">
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-tight">Управление бюджетом</h1>
               <p className="text-[11px] md:text-xs text-gray-500 mt-0.5">Cash Flow: контроль поступлений и выплат</p>
             </div>
             <div className="hidden md:flex items-center space-x-1 bg-gray-50 px-1.5 py-1 rounded-lg border border-gray-100">
-              <button onClick={() => setSelectedYear(y => y - 1)} className="p-1 hover:bg-white rounded shadow-sm text-gray-500"><ChevronLeft size={16} /></button>
+              <button onClick={() => setSelectedYear(y => y - 1)} className="p-1 hover:bg-white rounded shadow-sm text-gray-500 transition-all"><ChevronLeft size={16} /></button>
               <span className="font-bold text-gray-700 w-12 text-center select-none text-sm">{selectedYear}</span>
-              <button onClick={() => setSelectedYear(y => y + 1)} className="p-1 hover:bg-white rounded shadow-sm text-gray-500"><ChevronRight size={16} /></button>
+              <button onClick={() => setSelectedYear(y => y + 1)} className="p-1 hover:bg-white rounded shadow-sm text-gray-500 transition-all"><ChevronRight size={16} /></button>
             </div>
           </div>
-          <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-            <div className="flex bg-gray-100 p-1 rounded-lg overflow-x-auto hide-scrollbars">
-              <button onClick={() => setActiveTab('dashboard')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}><LayoutDashboard size={14} /> <span className="hidden sm:inline">Дашборд</span></button>
-              <button onClick={() => setActiveTab('admin')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'admin' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}><Settings size={14} /> <span className="hidden sm:inline">Админ-панель</span></button>
-              <button onClick={() => setActiveTab('backups')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'backups' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}><History size={14} /> <span className="hidden sm:inline">Бекапы</span>{backups.length > 0 && <span className="bg-blue-100 text-blue-600 text-[10px] px-1.5 rounded-full">{backups.length}</span>}</button>
+
+          <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end flex-wrap">
+            <div className="flex md:hidden items-center space-x-1 bg-gray-50 px-1.5 py-1 rounded-lg border border-gray-100">
+              <button onClick={() => setSelectedYear(y => y - 1)} className="p-1 hover:bg-white rounded shadow-sm text-gray-500"><ChevronLeft size={14} /></button>
+              <span className="font-bold text-gray-700 w-10 text-center select-none text-sm">{selectedYear}</span>
+              <button onClick={() => setSelectedYear(y => y + 1)} className="p-1 hover:bg-white rounded shadow-sm text-gray-500"><ChevronRight size={14} /></button>
             </div>
+
+            {!isGuestMode && (
+              <div className="flex bg-gray-100 p-1 rounded-lg overflow-x-auto hide-scrollbars">
+                <button onClick={() => setActiveTab('dashboard')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}><LayoutDashboard size={14} /> <span className="hidden sm:inline">Дашборд</span></button>
+                <button onClick={() => setActiveTab('admin')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'admin' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}><Settings size={14} /> <span className="hidden sm:inline">Админ-панель</span></button>
+                <button onClick={() => setActiveTab('backups')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 whitespace-nowrap ${activeTab === 'backups' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}><History size={14} /> <span className="hidden sm:inline">Бекапы</span>{backups.length > 0 && <span className="bg-blue-100 text-blue-600 text-[10px] px-1.5 rounded-full">{backups.length}</span>}</button>
+              </div>
+            )}
+
+            <button
+              onClick={toggleGuestMode}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 whitespace-nowrap ${isGuestMode ? 'bg-indigo-100 text-indigo-700 shadow-sm border border-indigo-200' : 'bg-white text-gray-700 shadow-sm border border-gray-200'}`}
+              title="Для демонстрации: переключает приложение в гостевой режим чтения"
+            >
+              {isGuestMode ? <EyeOff size={14} /> : <Share2 size={14} />}
+              <span className="hidden sm:inline">{isGuestMode ? 'Выйти из гостевого' : 'Гостевой вид'}</span>
+            </button>
           </div>
         </header>
 
+        {isGuestMode && (
+          <div className="bg-indigo-50 border border-indigo-100 text-indigo-800 px-4 py-3 rounded-xl text-sm flex items-center gap-3 print:hidden">
+            <Eye size={18} className="text-indigo-500" />
+            <div>
+              <p className="font-semibold">Активен гостевой вид (Предпросмотр по ссылке)</p>
+              <p className="text-indigo-600/80 mt-0.5">Некоторые статьи скрыты. Редактирование, история изменений и добавление факта недоступны.</p>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'dashboard' && (
-          <div className="flex flex-col gap-4 mb-6">
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1">
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
-                  <div><p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1">Поступления {period !== 'year' && `(${subPeriodLabel})`}</p><h2 className="text-xl font-bold text-gray-900 leading-none">{formatCurrency(incomeFact)}</h2><p className="text-[10px] text-gray-400 mt-1">План: {formatCurrency(incomePlan)}</p></div>
-                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg"><TrendingUp size={20} /></div>
+          <div className="flex flex-col gap-4 mb-6 print:gap-2 print:mb-0">
+            <div className="flex flex-col lg:flex-row gap-4 print:block">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1 print:gap-2 print:mb-4">
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between print:border-gray-400 print:shadow-none print:p-3">
+                  <div><p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1 print:text-black">Поступления {period !== 'year' && `(${subPeriodLabel})`}</p><h2 className="text-xl font-bold text-gray-900 leading-none print:text-black">{formatCurrency(incomeFact)}</h2><p className="text-[10px] text-gray-400 mt-1 print:text-black">План: {formatCurrency(incomePlan)}</p></div>
+                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg print:hidden"><TrendingUp size={20} /></div>
                 </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
-                  <div><p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1">Выплаты {period !== 'year' && `(${subPeriodLabel})`}</p><h2 className="text-xl font-bold text-gray-900 leading-none">{formatCurrency(expenseFact)}</h2><p className="text-[10px] text-gray-400 mt-1">План: {formatCurrency(expensePlan)}</p></div>
-                  <div className="p-2.5 bg-rose-50 text-rose-600 rounded-lg"><TrendingDown size={20} /></div>
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between print:border-gray-400 print:shadow-none print:p-3">
+                  <div><p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1 print:text-black">Выплаты {period !== 'year' && `(${subPeriodLabel})`}</p><h2 className="text-xl font-bold text-gray-900 leading-none print:text-black">{formatCurrency(expenseFact)}</h2><p className="text-[10px] text-gray-400 mt-1 print:text-black">План: {formatCurrency(expensePlan)}</p></div>
+                  <div className="p-2.5 bg-rose-50 text-rose-600 rounded-lg print:hidden"><TrendingDown size={20} /></div>
                 </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
-                  <div><p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1">Сальдо (Остаток)</p><h2 className={`text-xl font-bold leading-none ${balanceFact < 0 ? 'text-rose-600' : 'text-blue-600'}`}>{formatCurrency(balanceFact)}</h2><p className="text-[10px] text-gray-400 mt-1">План: {formatCurrency(balancePlan)}</p></div>
-                  <div className={`p-2.5 rounded-lg ${balanceFact >= 0 ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}><PiggyBank size={20} /></div>
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between print:border-gray-400 print:shadow-none print:p-3">
+                  <div><p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1 print:text-black">Сальдо (Остаток)</p><h2 className={`text-xl font-bold leading-none ${balanceFact < 0 ? 'text-rose-600' : 'text-blue-600'} print:text-black`}>{formatCurrency(balanceFact)}</h2><p className="text-[10px] text-gray-400 mt-1 print:text-black">План: {formatCurrency(balancePlan)}</p></div>
+                  <div className={`p-2.5 rounded-lg ${balanceFact >= 0 ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'} print:hidden`}><PiggyBank size={20} /></div>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row lg:flex-col gap-3 justify-center min-w-[240px]">
+              <div className="flex flex-col sm:flex-row lg:flex-col gap-3 justify-center min-w-[240px] print:hidden">
                 <div className="flex bg-white p-1 rounded-xl shadow-sm border border-gray-100 justify-between">
                   {['month', 'quarter', 'year'].map((p) => (<button key={p} onClick={() => handlePeriodChange(p)} className={`flex-1 py-1.5 px-2 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1.5 ${period === p ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:text-gray-900'}`}>{p === 'month' ? 'Месяц' : p === 'quarter' ? 'Квартал' : 'Год'}</button>))}
                 </div>
@@ -655,6 +773,9 @@ function App() {
                     <button onClick={handleNextSubPeriod} className="p-1 hover:bg-gray-50 rounded-md text-gray-500 transition-colors"><ChevronRight size={16} /></button>
                   </div>
                 )}
+                <button onClick={() => window.print()} className="mt-auto flex items-center justify-center gap-2 w-full py-2 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors shadow-sm">
+                  <Download size={16} /> Выгрузить в PDF
+                </button>
               </div>
             </div>
             {renderDashboardTable('ПОСТУПЛЕНИЯ', groupedIncomes, true)}
@@ -662,7 +783,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'admin' && (
+        {activeTab === 'admin' && !isGuestMode && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Добавить новую статью</h3>
@@ -677,10 +798,45 @@ function App() {
             </div>
             {renderAdminTable(`ПЛАН ПОСТУПЛЕНИЙ (${selectedYear} год)`, items.filter(i => i.type === 'income'), true)}
             {renderAdminTable(`ПЛАН РАСХОДОВ (${selectedYear} год)`, items.filter(i => i.type === 'expense'), false)}
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 flex items-center justify-between cursor-pointer bg-gray-50/50 hover:bg-gray-100 transition-colors" onClick={() => setIsGuestSettingsOpen(!isGuestSettingsOpen)}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><EyeOff size={20} /></div>
+                  <div><h3 className="text-lg font-semibold text-gray-900">Настройки гостевого доступа</h3><p className="text-sm text-gray-500 hidden sm:block">Выберите группы и отдельные статьи, которые будут скрыты от гостей.</p></div>
+                </div>
+                <button className="text-gray-400 hover:text-gray-900 transition-transform"><ChevronDown size={20} className={`transform transition-transform ${isGuestSettingsOpen ? '-rotate-180' : ''}`} /></button>
+              </div>
+              {isGuestSettingsOpen && (
+                <div className="p-6 border-t border-gray-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {allGroupedItemsForAdmin.map(group => (
+                      <div key={group.name} className="border border-gray-100 bg-gray-50/50 rounded-xl p-4">
+                        <label className="flex items-start gap-3 font-bold text-gray-800 mb-3 cursor-pointer group">
+                          <input type="checkbox" checked={sensitiveGroups.includes(group.name)} onChange={() => toggleSensitiveGroup(group.name)} className="mt-1 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 w-4 h-4 cursor-pointer" />
+                          <span className="group-hover:text-indigo-600 transition-colors">Скрыть всю группу:<br/> {group.name}</span>
+                        </label>
+                        <div className="pl-7 space-y-2">
+                          {group.items.map(itemName => {
+                            const isGroupHidden = sensitiveGroups.includes(group.name);
+                            return (
+                              <label key={itemName} className={`flex items-center gap-2 text-sm cursor-pointer ${isGroupHidden ? 'opacity-50' : 'text-gray-700 hover:text-indigo-600 transition-colors'}`}>
+                                <input type="checkbox" checked={isGroupHidden || sensitiveItems.includes(itemName)} onChange={() => toggleSensitiveItem(itemName)} disabled={isGroupHidden} className="rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 cursor-pointer disabled:cursor-not-allowed" />
+                                {itemName}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {activeTab === 'backups' && (
+        {activeTab === 'backups' && !isGuestMode && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
               <div><h3 className="text-lg font-semibold text-gray-900">Создать резервную копию</h3><p className="text-sm text-gray-500 mt-1">Сохраните текущее состояние бюджета перед внесением больших изменений.</p></div>
@@ -761,11 +917,11 @@ export default function ProtectedApp() {
   if (user) {
     return (
       <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-12">
-        <div className="bg-gray-900 text-white px-6 py-2 flex justify-between items-center text-xs font-sans">
+        <div className="bg-gray-900 text-white px-6 py-2 flex justify-between items-center text-xs font-sans print:hidden">
           <span className="opacity-70">Защищенная сессия: {user.email}</span>
           <button onClick={() => signOut(auth)} className="hover:text-rose-400 transition-colors">Выйти из системы</button>
         </div>
-        <div className="p-4 md:p-8">
+        <div className="p-4 md:p-8 print:p-0">
           <App />
         </div>
       </div>
