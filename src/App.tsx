@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, TrendingUp, TrendingDown, PiggyBank, Calendar, ChevronLeft, ChevronRight, Check, X, ChevronDown, LayoutDashboard, Settings, Trash2, Edit2, History, Save, RotateCcw, Download, Eye, EyeOff, Share2 } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, PiggyBank, Calendar, ChevronLeft, ChevronRight, Check, X, ChevronDown, LayoutDashboard, Settings, Trash2, Edit2, History, Save, RotateCcw, Download, Eye, EyeOff, Share2, Wallet } from 'lucide-react';
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, setDoc, onSnapshot, writeBatch, deleteDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -69,7 +69,6 @@ function App({ isSystemGuest }) {
   const [items, setItems] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
   
-  // Если зашел гость по ссылке, намертво блокируем его в гостевом режиме
   const [isGuestMode, setIsGuestMode] = useState(isSystemGuest || false);
   const [isDbLoaded, setIsDbLoaded] = useState(false);
   
@@ -132,7 +131,7 @@ function App({ isSystemGuest }) {
 
   // --- ЕДИНАЯ ФУНКЦИЯ СОХРАНЕНИЯ ---
   const updateData = async (newItems, newBackups = backups, newSensGroups = sensitiveGroups, newSensItems = sensitiveItems) => {
-    if (isSystemGuest) return; // Защита: гость физически не может ничего сохранить
+    if (isSystemGuest) return; 
     
     setItems(newItems);
     setBackups(newBackups);
@@ -159,7 +158,6 @@ function App({ isSystemGuest }) {
     }
   };
 
-  // Переключение гостевого режима (Доступно только Админу)
   const toggleGuestMode = () => {
     if (isSystemGuest) return;
     const nextMode = !isGuestMode;
@@ -209,6 +207,45 @@ function App({ isSystemGuest }) {
 
   const balancePlan = incomePlan - expensePlan;
   const balanceFact = incomeFact - expenseFact;
+
+  // Накопленный общий остаток
+  const { cumulativePlan, cumulativeFact } = useMemo(() => {
+    let cPlan = 0;
+    let cFact = 0;
+
+    let targetMonthIndex = 11;
+    if (period === 'month') targetMonthIndex = selectedMonth;
+    else if (period === 'quarter') targetMonthIndex = selectedQuarter * 3 + 2;
+
+    displayItems.forEach(item => {
+      Object.keys(item.plan).forEach(yearStr => {
+        const y = parseInt(yearStr, 10);
+        if (y < selectedYear) {
+          for (let m = 0; m < 12; m++) {
+            if (item.type === 'income') {
+              cPlan += item.plan[y][m] || 0;
+              cFact += item.fact[y][m] || 0;
+            } else {
+              cPlan -= item.plan[y][m] || 0;
+              cFact -= item.fact[y][m] || 0;
+            }
+          }
+        } else if (y === selectedYear) {
+          for (let m = 0; m <= targetMonthIndex; m++) {
+            if (item.type === 'income') {
+              cPlan += item.plan[y][m] || 0;
+              cFact += item.fact[y][m] || 0;
+            } else {
+              cPlan -= item.plan[y][m] || 0;
+              cFact -= item.fact[y][m] || 0;
+            }
+          }
+        }
+      });
+    });
+
+    return { cumulativePlan: cPlan, cumulativeFact: cFact };
+  }, [displayItems, selectedYear, period, selectedMonth, selectedQuarter]);
 
   const groupItemsByType = (type) => {
     const filtered = displayItems.filter(i => i.type === type);
@@ -434,7 +471,7 @@ function App({ isSystemGuest }) {
   }, [items]);
 
   if (!isDbLoaded) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-sans text-gray-500 text-sm">Загрузка данных...</div>;
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-sans text-gray-500 text-sm">Подключение к базе данных...</div>;
   }
 
   let subPeriodLabel = '';
@@ -730,7 +767,7 @@ function App({ isSystemGuest }) {
         {activeTab === 'dashboard' && (
           <div className="flex flex-col gap-4 mb-6 print:gap-2 print:mb-0">
             <div className="flex flex-col lg:flex-row gap-4 print:block">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1 print:gap-2 print:mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-1 print:gap-2 print:mb-4">
                 <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between print:border-gray-400 print:shadow-none print:p-3">
                   <div><p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1 print:text-black">Поступления {period !== 'year' && `(${subPeriodLabel})`}</p><h2 className="text-xl font-bold text-gray-900 leading-none print:text-black">{formatCurrency(incomeFact)}</h2><p className="text-[10px] text-gray-400 mt-1 print:text-black">План: {formatCurrency(incomePlan)}</p></div>
                   <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg print:hidden"><TrendingUp size={20} /></div>
@@ -740,8 +777,12 @@ function App({ isSystemGuest }) {
                   <div className="p-2.5 bg-rose-50 text-rose-600 rounded-lg print:hidden"><TrendingDown size={20} /></div>
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between print:border-gray-400 print:shadow-none print:p-3">
-                  <div><p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1 print:text-black">Сальдо (Остаток)</p><h2 className={`text-xl font-bold leading-none ${balanceFact < 0 ? 'text-rose-600' : 'text-blue-600'} print:text-black`}>{formatCurrency(balanceFact)}</h2><p className="text-[10px] text-gray-400 mt-1 print:text-black">План: {formatCurrency(balancePlan)}</p></div>
+                  <div><p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1 print:text-black">Сальдо за период</p><h2 className={`text-xl font-bold leading-none ${balanceFact < 0 ? 'text-rose-600' : 'text-blue-600'} print:text-black`}>{formatCurrency(balanceFact)}</h2><p className="text-[10px] text-gray-400 mt-1 print:text-black">План: {formatCurrency(balancePlan)}</p></div>
                   <div className={`p-2.5 rounded-lg ${balanceFact >= 0 ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'} print:hidden`}><PiggyBank size={20} /></div>
+                </div>
+                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between print:border-gray-400 print:shadow-none print:p-3">
+                  <div><p className="text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1 print:text-black" title="Накопленный итог с учетом всех предыдущих периодов">Общий остаток</p><h2 className={`text-xl font-bold leading-none ${cumulativeFact < 0 ? 'text-rose-600' : 'text-indigo-600'} print:text-black`}>{formatCurrency(cumulativeFact)}</h2><p className="text-[10px] text-gray-400 mt-1 print:text-black">План: {formatCurrency(cumulativePlan)}</p></div>
+                  <div className={`p-2.5 rounded-lg ${cumulativeFact >= 0 ? 'bg-indigo-50 text-indigo-600' : 'bg-rose-50 text-rose-600'} print:hidden`}><Wallet size={20} /></div>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row lg:flex-col gap-3 justify-center min-w-[240px] print:hidden">
@@ -876,7 +917,6 @@ export default function ProtectedApp() {
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(true);
   
-  // Распознаем, перешли ли по гостевой ссылке
   const [isGuestLink, setIsGuestLink] = useState(window.location.hash === '#guest');
 
   useEffect(() => {
@@ -897,7 +937,6 @@ export default function ProtectedApp() {
     e.preventDefault();
     setError('');
     try {
-      // Если мы на гостевой ссылке, подставляем системный email гостя
       const loginEmail = isGuestLink ? 'guest@res-kt.ru' : email;
       await signInWithEmailAndPassword(auth, loginEmail, password);
     } catch (err) {
@@ -957,7 +996,6 @@ export default function ProtectedApp() {
           </button>
         </form>
         
-        {/* Кнопка-переключалка внизу на случай, если админ зашел по гостевой ссылке */}
         <div className="mt-6 text-center">
           <button 
             onClick={() => setIsGuestLink(!isGuestLink)} 
