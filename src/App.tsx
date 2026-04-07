@@ -13,6 +13,10 @@ const monthNames = [
 const shortMonthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
 const quarterNames = ['1 Квартал', '2 Квартал', '3 Квартал', '4 Квартал'];
 
+// Настройки приватности для гостевого доступа по умолчанию
+const SENSITIVE_GROUPS = ['ФОТ + налоги на ФОТ'];
+const SENSITIVE_ITEMS = ['Аутсорс бухгалтерия'];
+
 // Сырые стартовые данные
 const rawBudgetItems = [
   { id: 101, type: 'income', group: 'Основные поступления', name: 'Остаток с предыдущего периода', planYear: 1000000, fact: [1000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
@@ -37,8 +41,7 @@ const initialBudgetItems = rawBudgetItems.map(item => {
   fact26.forEach((val, idx) => {
     if (val !== 0) {
       transactions.push({
-        id: Math.random().toString(),
-        year: 2026, month: idx, amount: val, comment: 'Начальный факт', date: ''
+        id: Math.random().toString(), year: 2026, month: idx, amount: val, comment: 'Начальный факт', date: ''
       });
     }
   });
@@ -64,6 +67,18 @@ const getValueForPeriod = (yearlyData, year, period, monthIdx, quarterIdx) => {
   return arr.reduce((sum, val) => sum + (val || 0), 0);
 };
 
+// Безопасный парсер математических выражений (например, "100+200" или "5000/2")
+const safeEvaluate = (expr) => {
+  try {
+    const cleanExpr = expr.replace(/,/g, '.').replace(/[^0-9+\-*/.]/g, '');
+    if (!cleanExpr) return 0;
+    // Используем простой парсер вместо Function('return') для безопасности
+    return new Function(`return ${cleanExpr}`)() || 0; 
+  } catch (e) {
+    return 0;
+  }
+};
+
 // --- ОСНОВНОЕ ПРИЛОЖЕНИЕ ---
 function App({ isSystemGuest }) {
   const [items, setItems] = useState([]);
@@ -85,8 +100,8 @@ function App({ isSystemGuest }) {
   const [newItemGroup, setNewItemGroup] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-  const [sensitiveGroups, setSensitiveGroups] = useState(['ФОТ + налоги на ФОТ']);
-  const [sensitiveItems, setSensitiveItems] = useState(['Аутсорс бухгалтерия']);
+  const [sensitiveGroups, setSensitiveGroups] = useState(SENSITIVE_GROUPS);
+  const [sensitiveItems, setSensitiveItems] = useState(SENSITIVE_ITEMS);
   const [isGuestSettingsOpen, setIsGuestSettingsOpen] = useState(false);
 
   const [collapsedGroups, setCollapsedGroups] = useState({});
@@ -277,14 +292,25 @@ function App({ isSystemGuest }) {
   const handleAddFact = (id) => {
     if (isGuestMode) return;
     const inputData = expenseInputs[id] || {};
-    const amountToAdd = parseFloat(inputData.amount);
-    if (isNaN(amountToAdd) || amountToAdd === 0) return;
+    
+    const rawAmount = (inputData.amount || '').toString().trim();
+    if (!rawAmount) return;
+
+    let amountToAdd = safeEvaluate(rawAmount);
+    let finalComment = (inputData.comment || '').trim();
+
+    if (amountToAdd === 0 || isNaN(amountToAdd)) return;
+
+    // Если это было выражение (например, 1200+600), дописываем его в коммент
+    if (/[+\-*/]/.test(rawAmount) && rawAmount !== amountToAdd.toString()) {
+      finalComment = finalComment ? `${finalComment} (${rawAmount})` : rawAmount;
+    }
 
     let targetMonthIndex = period === 'month' ? selectedMonth : period === 'quarter' ? (inputData.month !== undefined ? parseInt(inputData.month) : selectedQuarter * 3) : (inputData.month !== undefined ? parseInt(inputData.month) : 0);
 
     const newTx = {
       id: Date.now().toString(), year: selectedYear, month: targetMonthIndex, amount: amountToAdd,
-      comment: inputData.comment || '', date: new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })
+      comment: finalComment, date: new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })
     };
 
     const newItems = items.map(item => {
@@ -345,7 +371,7 @@ function App({ isSystemGuest }) {
 
   const handleDirectFactUpdate = (id, value) => {
     if (isGuestMode) return;
-    const numValue = parseFloat(value) || 0;
+    const numValue = safeEvaluate(value);
     const newItems = items.map(item => {
       if (item.id === id) {
         const newFactYearly = { ...item.fact };
@@ -362,7 +388,7 @@ function App({ isSystemGuest }) {
 
   const handleFactBlur = (id, value) => {
     if (isGuestMode) return;
-    const numValue = parseFloat(value) || 0;
+    const numValue = safeEvaluate(value);
     let isChanged = false;
     const newItems = items.map(item => {
       if (item.id === id) {
@@ -399,7 +425,7 @@ function App({ isSystemGuest }) {
   const handleAdminUpdate = (id, field, value) => updateData(items.map(item => item.id === id ? { ...item, [field]: value } : item));
 
   const handleAdminPlanUpdate = (id, monthIndex, value) => {
-    const numValue = parseFloat(value) || 0;
+    const numValue = safeEvaluate(value);
     const newItems = items.map(item => {
       if (item.id === id) {
         const newPlanYearly = { ...item.plan };
@@ -471,7 +497,7 @@ function App({ isSystemGuest }) {
   }, [items]);
 
   if (!isDbLoaded) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-sans text-gray-500 text-sm">Подключение к базе данных...</div>;
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-sans text-gray-500 text-sm">Загрузка данных...</div>;
   }
 
   let subPeriodLabel = '';
@@ -556,7 +582,7 @@ function App({ isSystemGuest }) {
                             <td className="py-1.5 px-4">
                               {period === 'month' && !isGuestMode ? (
                                 <>
-                                  <input type="number" className={`w-24 bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-400 focus:bg-white rounded px-1 py-0.5 outline-none transition-all hide-arrows font-medium ${isIncome ? 'text-emerald-700' : 'text-rose-600'} print:hidden`} value={currentFact === 0 ? '' : currentFact} placeholder="0" onChange={(e) => handleDirectFactUpdate(item.id, e.target.value)} onBlur={(e) => handleFactBlur(item.id, e.target.value)} />
+                                  <input type="text" className={`w-24 bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-400 focus:bg-white rounded px-1 py-0.5 outline-none transition-all font-medium ${isIncome ? 'text-emerald-700' : 'text-rose-600'} print:hidden`} value={currentFact === 0 ? '' : currentFact} placeholder="0" onChange={(e) => handleDirectFactUpdate(item.id, e.target.value)} onBlur={(e) => handleFactBlur(item.id, e.target.value)} />
                                   <span className="hidden print:inline font-medium text-black">{formatCurrency(currentFact)}</span>
                                 </>
                               ) : (
@@ -577,7 +603,7 @@ function App({ isSystemGuest }) {
                                       {period === 'quarter' ? [0, 1, 2].map(offset => { const mIdx = selectedQuarter * 3 + offset; return <option key={mIdx} value={mIdx}>{shortMonthNames[mIdx]}</option> }) : monthNames.map((mName, idx) => <option key={idx} value={idx}>{shortMonthNames[idx]}</option>)}
                                     </select>
                                   )}
-                                  <input type="number" placeholder="Сумма" className="w-20 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" value={inputData.amount || ''} onChange={(e) => handleExpenseInputChange(item.id, 'amount', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddFact(item.id)} />
+                                  <input type="text" placeholder="Сумма или 100+200" className="w-28 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" value={inputData.amount || ''} onChange={(e) => handleExpenseInputChange(item.id, 'amount', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddFact(item.id)} />
                                   <input type="text" placeholder="Комментарий..." className="w-32 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" value={inputData.comment || ''} onChange={(e) => handleExpenseInputChange(item.id, 'comment', e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddFact(item.id)} />
                                   <button onClick={() => handleAddFact(item.id)} className={`p-1 rounded-lg transition-colors ${isIncome ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}><Plus size={16} /></button>
                                 </div>
@@ -668,7 +694,7 @@ function App({ isSystemGuest }) {
                     <td className="py-1.5 px-3"><input type="text" value={item.group} onChange={(e) => handleAdminUpdate(item.id, 'group', e.target.value)} className="w-full bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-400 focus:bg-white rounded px-1 py-1 outline-none transition-all" /></td>
                     <td className="py-1.5 px-3"><input type="text" value={item.name} onChange={(e) => handleAdminUpdate(item.id, 'name', e.target.value)} className="w-full bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-400 focus:bg-white rounded px-1 py-1 outline-none font-medium transition-all" /></td>
                     {currentYearPlan.map((val, idx) => (
-                      <td key={idx} className="py-1.5 px-1 text-center"><input type="number" value={val === 0 ? '' : val} placeholder="0" onChange={(e) => handleAdminPlanUpdate(item.id, idx, e.target.value)} className="w-16 bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-400 focus:bg-white rounded px-1 py-1 outline-none text-right transition-all hide-arrows" /></td>
+                      <td key={idx} className="py-1.5 px-1 text-center"><input type="text" value={val === 0 ? '' : val} placeholder="0" onChange={(e) => handleAdminPlanUpdate(item.id, idx, e.target.value)} className="w-16 bg-transparent border border-transparent hover:border-gray-200 focus:border-blue-400 focus:bg-white rounded px-1 py-1 outline-none text-right transition-all font-medium text-gray-700" /></td>
                     ))}
                     <td className="py-1.5 px-3 text-right font-bold text-gray-700">{formatCurrency(currentYearPlan.reduce((a, b) => a + b, 0))}</td>
                     <td className="py-1.5 px-2 text-center">
